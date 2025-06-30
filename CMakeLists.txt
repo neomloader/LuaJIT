@@ -189,10 +189,13 @@ set(DASM_DASC ${LUAJIT_SOURCE_DIR}/src/vm_${DASM_ARCH}.dasc)
 
 # Generate buildvm arch header
 add_custom_command(OUTPUT ${DASM_T}
-  COMMAND minilua ${DASM} ${DASM_FLAGS} -o ${DASM_T} ${DASM_DASC}
+  COMMAND ${CMAKE_COMMAND} -E echo "Running minilua for buildvm_arch.h"
+  COMMAND $<TARGET_FILE:minilua> ${DASM} ${DASM_FLAGS} -o ${DASM_T} ${DASM_DASC}
   WORKING_DIRECTORY ${LUAJIT_SOURCE_DIR}/dynasm
-  DEPENDS minilua
+  DEPENDS minilua ${DASM} ${DASM_DASC}
+  COMMENT "Generating buildvm_arch.h using minilua"
 )
+
 
 # buildvm
 file(GLOB SRC_BUILDVM ${LUAJIT_SOURCE_DIR}/src/host/buildvm*.c)
