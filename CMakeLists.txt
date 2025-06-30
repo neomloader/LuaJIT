@@ -21,9 +21,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 # SOFTWARE.
 
-if(NOT IS_DIRECTORY ${LUAJIT_SOURCE_DIR})
-	message(FATAL_ERROR "LUAJIT_SOURCE_DIR doesn't point to a valid directory.")
+if(NOT DEFINED LUAJIT_SOURCE_DIR)
+  set(LUAJIT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
+
+if(NOT IS_DIRECTORY ${LUAJIT_SOURCE_DIR})
+  message(FATAL_ERROR "LUAJIT_SOURCE_DIR doesn't point to a valid directory. Got: ${LUAJIT_SOURCE_DIR}")
+endif()
+
 
 ## CONFIGURATION
 
@@ -149,14 +154,9 @@ set(DASM_T ${LUAJIT_SOURCE_DIR}/src/host/buildvm_arch.h)
 
 # 2DO: Proper detection of flags
 set(DASM_FLAGS -D FPU -D HFABI)
-set(DASM_ARCH x86)
-
-# All ARM hosts (iOS, Android, Raspberry Pi etc.)
-if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(arm|ARM).*")
-  set(DASM_ARCH arm)
-  list(APPEND DASM_FLAGS "-D DUALNUM")
-  add_definitions("-DLJ_ARCH_HASFPU=1")
-endif()
+set(DASM_ARCH arm64)
+list(APPEND DASM_FLAGS "-D DUALNUM")
+add_definitions("-DLJ_ARCH_HASFPU=1")
 
 # Windows is ... special
 if(WIN32)
