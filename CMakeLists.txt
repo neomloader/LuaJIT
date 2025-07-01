@@ -141,9 +141,26 @@ set(LJLIB_C
 )
 
 ## GENERATE VM
-# Build minilua
-add_executable(minilua ${LUAJIT_SOURCE_DIR}/src/host/minilua.c)
-target_link_libraries(minilua ${LIBS})
+include(ExternalProject)
+
+ExternalProject_Add(minilua_host_build
+  SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}
+  CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DLUAJIT_SOURCE_DIR=${LUAJIT_SOURCE_DIR}
+  BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/minilua_host/minilua_host${CMAKE_EXECUTABLE_SUFFIX}
+  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/minilua_host
+)
+
+ExternalProject_Get_Property(minilua_host_build BINARY_DIR)
+set(MINILUA_EXE ${BINARY_DIR}/minilua_host${CMAKE_EXECUTABLE_SUFFIX})
+
+# Use native minilua for DASM
+add_custom_command(OUTPUT ${DASM_T}
+  COMMAND ${MINILUA_EXE} ${DASM} ${DASM_FLAGS} -o ${DASM_T} ${DASM_DASC}
+  WORKING_DIRECTORY ${LUAJIT_SOURCE_DIR}/dynasm
+  DEPENDS minilua_host_build
+)
 
 # Dynasm
 set(DASM ${LUAJIT_SOURCE_DIR}/dynasm/dynasm.lua)
