@@ -206,13 +206,6 @@ message("DASM_ARCH: ${DASM_ARCH}")
 
 set(DASM_DASC ${LUAJIT_SOURCE_DIR}/src/vm_${DASM_ARCH}.dasc)
 
-# Generate buildvm arch header
-add_custom_command(OUTPUT ${DASM_T}
-  COMMAND minilua ${DASM} ${DASM_FLAGS} -o ${DASM_T} ${DASM_DASC}
-  WORKING_DIRECTORY ${LUAJIT_SOURCE_DIR}/dynasm
-  DEPENDS minilua
-)
-
 # buildvm
 file(GLOB SRC_BUILDVM ${LUAJIT_SOURCE_DIR}/src/host/buildvm*.c)
 add_executable(buildvm ${SRC_BUILDVM} ${DASM_T})
