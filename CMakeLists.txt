@@ -29,9 +29,6 @@ if(NOT IS_DIRECTORY ${LUAJIT_SOURCE_DIR})
   message(FATAL_ERROR "LUAJIT_SOURCE_DIR doesn't point to a valid directory. Got: ${LUAJIT_SOURCE_DIR}")
 endif()
 
-
-## CONFIGURATION
-
 # Default configuration (we assume POSIX by default)
 set(LUA_PATH "LUA_PATH" CACHE STRING "Environment variable to use as package.path.")
 set(LUA_CPATH "LUA_CPATH" CACHE STRING "Environment variable to use as package.cpath.")
@@ -154,9 +151,14 @@ set(DASM_T ${LUAJIT_SOURCE_DIR}/src/host/buildvm_arch.h)
 
 # 2DO: Proper detection of flags
 set(DASM_FLAGS -D FPU -D HFABI)
-set(DASM_ARCH arm64)
-list(APPEND DASM_FLAGS "-D DUALNUM")
-add_definitions("-DLJ_ARCH_HASFPU=1")
+set(DASM_ARCH x86)
+
+# All ARM hosts (iOS, Android, Raspberry Pi etc.)
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(arm|ARM).*")
+  set(DASM_ARCH arm)
+  list(APPEND DASM_FLAGS "-D DUALNUM")
+  add_definitions("-DLJ_ARCH_HASFPU=1")
+endif()
 
 # Windows is ... special
 if(WIN32)
@@ -189,14 +191,10 @@ set(DASM_DASC ${LUAJIT_SOURCE_DIR}/src/vm_${DASM_ARCH}.dasc)
 
 # Generate buildvm arch header
 add_custom_command(OUTPUT ${DASM_T}
-  COMMAND ${CMAKE_COMMAND} -E echo "Running minilua for buildvm_arch.h"
-  COMMAND ${CMAKE_COMMAND} -E chdir ${LUAJIT_SOURCE_DIR}/dynasm
-          $<TARGET_FILE:minilua> ${DASM} ${DASM_FLAGS} -o ${DASM_T} ${DASM_DASC}
+  COMMAND minilua ${DASM} ${DASM_FLAGS} -o ${DASM_T} ${DASM_DASC}
   WORKING_DIRECTORY ${LUAJIT_SOURCE_DIR}/dynasm
-  DEPENDS minilua ${DASM} ${DASM_DASC}
-  COMMENT "Generating buildvm_arch.h using minilua"
+  DEPENDS minilua
 )
-
 
 # buildvm
 file(GLOB SRC_BUILDVM ${LUAJIT_SOURCE_DIR}/src/host/buildvm*.c)
