@@ -155,13 +155,6 @@ ExternalProject_Add(minilua_host_build
 ExternalProject_Get_Property(minilua_host_build BINARY_DIR)
 set(MINILUA_EXE ${BINARY_DIR}/minilua_host${CMAKE_EXECUTABLE_SUFFIX})
 
-# Use native minilua for DASM
-add_custom_command(OUTPUT ${DASM_T}
-  COMMAND ${MINILUA_EXE} ${DASM} ${DASM_FLAGS} -o ${DASM_T} ${DASM_DASC}
-  WORKING_DIRECTORY ${LUAJIT_SOURCE_DIR}/dynasm
-  DEPENDS minilua_host_build
-)
-
 # Dynasm
 set(DASM ${LUAJIT_SOURCE_DIR}/dynasm/dynasm.lua)
 set(DASM_T ${LUAJIT_SOURCE_DIR}/src/host/buildvm_arch.h)
@@ -205,6 +198,13 @@ message("DASM_FLAGS: ${DASM_FLAGS_STR}")
 message("DASM_ARCH: ${DASM_ARCH}")
 
 set(DASM_DASC ${LUAJIT_SOURCE_DIR}/src/vm_${DASM_ARCH}.dasc)
+
+# Use native minilua for DASM
+add_custom_command(OUTPUT ${DASM_T}
+  COMMAND ${MINILUA_EXE} ${DASM} ${DASM_FLAGS} -o ${DASM_T} ${DASM_DASC}
+  WORKING_DIRECTORY ${LUAJIT_SOURCE_DIR}/dynasm
+  DEPENDS minilua_host_build
+)
 
 # buildvm
 file(GLOB SRC_BUILDVM ${LUAJIT_SOURCE_DIR}/src/host/buildvm*.c)
