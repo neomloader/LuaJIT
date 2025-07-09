@@ -223,7 +223,12 @@ function(luajit_build_host_tools)
 
     # buildvm
     add_executable(buildvm ${HOST_TOOL_BUILDVM_SOURCES} "${CMAKE_CURRENT_BINARY_DIR}/buildvm_arch.h")
-    target_include_directories(buildvm PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${HOST_TOOL_BUILDVM_INCLUDES})
+    target_include_directories(buildvm PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}
+        ${HOST_TOOL_BUILDVM_INCLUDES}
+        "${CMAKE_SOURCE_DIR}/externals/luajit/include"
+    )
+
     target_compile_definitions(buildvm PRIVATE ${TARGET_ARCH})
     if(FORCE_TARGET_64BIT)
         set_target_properties(buildvm PROPERTIES COMPILE_FLAGS "-m64" LINK_FLAGS "-m64")
@@ -232,6 +237,4 @@ function(luajit_build_host_tools)
     endif()
 
     export(TARGETS minilua buildvm FILE "${CMAKE_BINARY_DIR}/LuaJITHostToolsConfig.cmake")
-    set(MINILUA_EXECUTABLE $<TARGET_FILE:minilua> PARENT_SCOPE)
-    set(BUILDVM_EXECUTABLE $<TARGET_FILE:buildvm> PARENT_SCOPE)
 endfunction()
