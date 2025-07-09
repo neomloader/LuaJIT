@@ -1,7 +1,0 @@
-cmake_minimum_required(VERSION 4.0)
-project(minilua_host C)
-
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-add_executable(minilua_host ${LUAJIT_SOURCE_DIR}/src/host/minilua.c)
-target_include_directories(minilua_host PRIVATE ${LUAJIT_SOURCE_DIR}/src)
