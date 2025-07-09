@@ -1,5 +1,10 @@
 include(CheckCCompilerFlag)
 
+if(NOT DEFINED LUAJIT_INCLUDE_DIR)
+    get_property(tmp CACHE LUAJIT_INCLUDE_DIR PROPERTY VALUE)
+    set(LUAJIT_INCLUDE_DIR "${tmp}")
+endif()
+
 function(luajit_build_host_tools)
     ##### Parse arguments
 
