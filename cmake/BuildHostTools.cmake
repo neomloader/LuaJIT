@@ -223,7 +223,6 @@ function(luajit_build_host_tools)
 
     # buildvm
     add_executable(buildvm ${HOST_TOOL_BUILDVM_SOURCES} "${CMAKE_CURRENT_BINARY_DIR}/buildvm_arch.h")
-    get_property(LUAJIT_INCLUDE_DIR GLOBAL PROPERTY LUAJIT_INCLUDE_DIR)
     message(STATUS "[BuildHostTools] LUAJIT_INCLUDE_DIR: ${LUAJIT_INCLUDE_DIR}")
     target_include_directories(buildvm PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}
