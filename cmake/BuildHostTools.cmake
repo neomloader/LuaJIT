@@ -226,7 +226,7 @@ function(luajit_build_host_tools)
     target_include_directories(buildvm PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}
         ${HOST_TOOL_BUILDVM_INCLUDES}
-        "${CMAKE_SOURCE_DIR}/externals/luajit/include"
+        ${LUAJIT_INCLUDE_DIR}
     )
 
     target_compile_definitions(buildvm PRIVATE ${TARGET_ARCH})
