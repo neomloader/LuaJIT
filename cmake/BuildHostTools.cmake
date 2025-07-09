@@ -232,4 +232,6 @@ function(luajit_build_host_tools)
     endif()
 
     export(TARGETS minilua buildvm FILE "${CMAKE_BINARY_DIR}/LuaJITHostToolsConfig.cmake")
+    set(MINILUA_EXECUTABLE $<TARGET_FILE:minilua> PARENT_SCOPE)
+    set(BUILDVM_EXECUTABLE $<TARGET_FILE:buildvm> PARENT_SCOPE)
 endfunction()
