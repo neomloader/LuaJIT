@@ -696,7 +696,7 @@ set(LJCORE_C
     "${CMAKE_CURRENT_SOURCE_DIR}/src/lib_aux.c"
     ${LJLIB_C}
     "${CMAKE_CURRENT_SOURCE_DIR}/src/lib_init.c"
-
+)
 set(LJVMCORE_C "${CMAKE_CURRENT_BINARY_DIR}/${LJVM_BOUT}" "${LJCORE_C}")
 
 ##############################################################################
