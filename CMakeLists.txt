@@ -12,6 +12,17 @@ include(CheckLibraryExists)
 
 include(cmake/BuildHostTools.cmake)
 
+# ======================================================================
+get_filename_component(PROJECT_ROOT "${CMAKE_SOURCE_DIR}" DIRECTORY)
+get_filename_component(PROJECT_ROOT "${PROJECT_ROOT}" DIRECTORY)
+get_filename_component(PROJECT_ROOT "${PROJECT_ROOT}" DIRECTORY)
+
+set(LUAJIT_INCLUDE_DIR "${PROJECT_ROOT}/externals/luajit/include")
+
+file(REAL_PATH "${LUAJIT_INCLUDE_DIR}" LUAJIT_INCLUDE_DIR)
+message(STATUS "[LUAJIT BUILD] LUAJIT_INCLUDE_DIR: ${LUAJIT_INCLUDE_DIR}")
+# ======================================================================
+
 ##############################################################################
 ################################## OPTIONS  ##################################
 ##############################################################################
