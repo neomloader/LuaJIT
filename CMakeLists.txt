@@ -19,7 +19,7 @@ message(STATUS "[LUAJIT BUILD] LUAJIT_INCLUDE_DIR: ${LUAJIT_INCLUDE_DIR}")
 
 option(LUAJIT_OPTION_MORE_WARNINGS "Enable more warnings" OFF)
 
-set(LUAJIT_OPTION_BUILD_MODE "mixed" CACHE STRING "Default build mode is mixed mode on POSIX, dynamic on Windows")
+set(LUAJIT_OPTION_BUILD_MODE "static" CACHE STRING "Default build mode is mixed mode on POSIX, dynamic on Windows")
 set_property(CACHE LUAJIT_OPTION_BUILD_MODE PROPERTY STRINGS "mixed" "static" "dynamic")
 
 option(LUAJIT_OPTION_DISABLE_FFI "Permanently disable the FFI extension" OFF)
