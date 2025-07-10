@@ -216,6 +216,8 @@ if(LUAJIT_HOST_BUILD_STAGE)
             "${CMAKE_CURRENT_SOURCE_DIR}/src/host/buildvm_fold.c"
         BUILDVM_INCLUDES
             "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        LUAJIT_INCLUDE_DIR
+            "${LUAJIT_INCLUDE_DIR}"
     )
     return()  # finish host build stage
 endif()
@@ -835,6 +837,8 @@ else()
             "${CMAKE_CURRENT_SOURCE_DIR}/src/host/buildvm_fold.c"
         BUILDVM_INCLUDES
             "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        LUAJIT_INCLUDE_DIR
+            "${LUAJIT_INCLUDE_DIR}"
     )
 endif()
 
