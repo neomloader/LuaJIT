@@ -918,5 +918,6 @@ if(NOT ${BUILDMODE} STREQUAL "dynamic")
     target_compile_options(liblua-static PRIVATE ${TARGET_XCFLAGS})
 
     add_executable(lua-static "${CMAKE_CURRENT_SOURCE_DIR}/src/luajit.c")
+    target_include_directories(lua-static PRIVATE "${LUAJIT_INCLUDE_DIR}")
     target_link_libraries(lua-static liblua-static)
 endif()
