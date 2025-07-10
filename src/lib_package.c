@@ -16,8 +16,7 @@
 #include "lj_obj.h"
 #include "lj_err.h"
 #include "lj_lib.h"
-#include "lj_clib.h"
-#include "lj_strfmt.h"
+
 /* ------------------------------------------------------------------------ */
 
 /* Error codes for ll_loadfunc. */
@@ -35,133 +34,18 @@
 
 #if LJ_TARGET_DLOPEN
 
-#include <android/dlext.h> // для android_namespace_t
 #include <dlfcn.h>
-#include <fcntl.h>
-#include <link.h>
-#include <sys/sendfile.h>
-#include <unistd.h>
-#include <sys/mman.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
-#include <android/dlext.h>
-#include <errno.h>
-#include <sys/syscall.h>
-#include <link.h>
-#define CLIB_SOEXT	"%s.so"
-static const char* extname(lua_State *L, const char *name)
-{
-  if (!strchr(name, '/')
-#if LJ_TARGET_CYGWIN
-      && !strchr(name, '\\')
-#endif
-     ) {
-    if (!strchr(name, '.')) {
-      name = lj_strfmt_pushf(L, CLIB_SOEXT, name);  // добавляет .so
-      L->top--;
-#if LJ_TARGET_CYGWIN
-    } else {
-      return name;
-#endif
-    }
 
-    // Удаляем добавление "lib" спереди:
-    // if (!(name[0] == CLIB_SOPREFIX[0] && name[1] == CLIB_SOPREFIX[1] &&
-    //       name[2] == CLIB_SOPREFIX[2])) {
-    //   name = lj_strfmt_pushf(L, CLIB_SOPREFIX "%s", name);
-    //   L->top--;
-    // }
-
-  }
-  return name;
-}
-
-#define MFD_CLOEXEC 0x0001
-#define SYS_memfd_create 279
-static int my_memfd_create(const char *name, unsigned int flags) {
-  return syscall(SYS_memfd_create, name, flags);
-}
-struct android_dlextinfo {
-    uint64_t flags;
-    void* reserved_addr;
-    size_t reserved_size;
-    int relro_fd;
-    struct android_namespace_t *library_namespace;
-    int extinfo_flags;
-};
 static void ll_unloadlib(void *lib)
 {
   dlclose(lib);
 }
 
-static void *ll_load(lua_State *L, const char *name, int global)
+static void *ll_load(lua_State *L, const char *path, int gl)
 {
-  const char *fullname = extname(L, name);
-  int fd_src = open(fullname, O_RDONLY | O_CLOEXEC);
-  if (fd_src < 0) {
-    lj_err_callermsg(L, "Failed to open shared library file");
-    return NULL;
-  }
-
-  int fd_memfd = my_memfd_create("libmemfd", MFD_CLOEXEC);
-  if (fd_memfd < 0) {
-    close(fd_src);
-    lj_err_callermsg(L, "memfd_create not supported");
-    return NULL;
-  }
-
-  off_t offset = 0;
-  ssize_t n;
-  while ((n = sendfile(fd_memfd, fd_src, &offset, 65536)) > 0);
-  if (n < 0) {
-    close(fd_src);
-    close(fd_memfd);
-    lj_err_callermsg(L, "sendfile failed copying library");
-    return NULL;
-  }
-  close(fd_src);
-
-  char fd_path[64];
-  snprintf(fd_path, sizeof(fd_path), "/proc/self/fd/%d", fd_memfd);
-
-  void *handle = NULL;
-
-  // Получаем android_dlopen_ext
-  void *libdl = dlopen("libdl_android.so", RTLD_NOW);
-  void *libc = dlopen("libc.so", RTLD_NOW);
-  void *(*android_dlopen_ext)(const char *, int, const struct android_dlextinfo *) =
-    dlsym(libc, "android_dlopen_ext");
-
-  void *(*android_create_namespace)(
-    const char *, const char *, const char *, uint64_t,
-    const char *, void *) = dlsym(libdl, "android_create_namespace");
-
-  if (android_dlopen_ext && android_create_namespace) {
-    // создаём namespace
-    void *ns = android_create_namespace("my_lua_ns", NULL, NULL, 0, NULL, NULL);
-
-    struct android_dlextinfo extinfo;
-    memset(&extinfo, 0, sizeof(extinfo));
-    extinfo.flags = ANDROID_DLEXT_USE_NAMESPACE;
-    extinfo.library_namespace = ns;
-
-    handle = android_dlopen_ext(fd_path, RTLD_NOW | (global ? RTLD_GLOBAL : RTLD_LOCAL), &extinfo);
-  }
-
-  if (!handle) {
-    // fallback на обычный dlopen (например, если android_dlopen_ext не доступен)
-    handle = dlopen(fd_path, RTLD_NOW | (global ? RTLD_GLOBAL : RTLD_LOCAL));
-  }
-
-  if (!handle) {
-    const char *err = dlerror();
-    close(fd_memfd);
-    lj_err_callermsg(L, err ? err : "dlopen_ext and fallback failed");
-    return NULL;
-  }
-
-  return handle;
+  void *lib = dlopen(path, RTLD_NOW | (gl ? RTLD_GLOBAL : RTLD_LOCAL));
+  if (lib == NULL) lua_pushstring(L, dlerror());
+  return lib;
 }
 
 static lua_CFunction ll_sym(lua_State *L, void *lib, const char *sym)
@@ -693,4 +577,51 @@ static const luaL_Reg package_lib[] = {
 
 static const luaL_Reg package_global[] = {
   { "module",	lj_cf_package_module },
-	
+  { "require",	lj_cf_package_require },
+  { NULL, NULL }
+};
+
+static const lua_CFunction package_loaders[] =
+{
+  lj_cf_package_loader_preload,
+  lj_cf_package_loader_lua,
+  lj_cf_package_loader_c,
+  lj_cf_package_loader_croot,
+  NULL
+};
+
+LUALIB_API int luaopen_package(lua_State *L)
+{
+  int i;
+  int noenv;
+  luaL_newmetatable(L, "_LOADLIB");
+  lj_lib_pushcf(L, lj_cf_package_unloadlib, 1);
+  lua_setfield(L, -2, "__gc");
+  luaL_register(L, LUA_LOADLIBNAME, package_lib);
+  lua_copy(L, -1, LUA_ENVIRONINDEX);
+  lua_createtable(L, sizeof(package_loaders)/sizeof(package_loaders[0])-1, 0);
+  for (i = 0; package_loaders[i] != NULL; i++) {
+    lj_lib_pushcf(L, package_loaders[i], 1);
+    lua_rawseti(L, -2, i+1);
+  }
+#if LJ_52
+  lua_pushvalue(L, -1);
+  lua_setfield(L, -3, "searchers");
+#endif
+  lua_setfield(L, -2, "loaders");
+  lua_getfield(L, LUA_REGISTRYINDEX, "LUA_NOENV");
+  noenv = lua_toboolean(L, -1);
+  lua_pop(L, 1);
+  setpath(L, "path", LUA_PATH, LUA_PATH_DEFAULT, noenv);
+  setpath(L, "cpath", LUA_CPATH, LUA_CPATH_DEFAULT, noenv);
+  lua_pushliteral(L, LUA_PATH_CONFIG);
+  lua_setfield(L, -2, "config");
+  luaL_findtable(L, LUA_REGISTRYINDEX, "_LOADED", 16);
+  lua_setfield(L, -2, "loaded");
+  luaL_findtable(L, LUA_REGISTRYINDEX, "_PRELOAD", 4);
+  lua_setfield(L, -2, "preload");
+  lua_pushvalue(L, LUA_GLOBALSINDEX);
+  luaL_register(L, NULL, package_global);
+  lua_pop(L, 1);
+  return 1;
+}
