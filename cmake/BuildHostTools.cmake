@@ -49,7 +49,6 @@ function(luajit_build_host_tools)
         MINILUA_SOURCES
         BUILDVM_SOURCES
         BUILDVM_INCLUDES
-        LUAJIT_INCLUDE_DIR
     )
     cmake_parse_arguments(HOST_TOOL "" "${ONE_VALUE_ARGS}" "${MULTI_VALUE_ARGS}" ${ARGN})
 
