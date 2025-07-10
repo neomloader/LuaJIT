@@ -12,29 +12,6 @@ include(CheckLibraryExists)
 
 include(cmake/BuildHostTools.cmake)
 
-# ======================================================================
-string(FIND "${CMAKE_SOURCE_DIR}" "/_deps/" DEPS_POS_UNIX)
-string(FIND "${CMAKE_SOURCE_DIR}" "\\_deps\\" DEPS_POS_WIN)
-
-if((DEPS_POS_UNIX GREATER -1) OR (DEPS_POS_WIN GREATER -1))
-    get_filename_component(PROJECT_ROOT "${CMAKE_SOURCE_DIR}" DIRECTORY)
-    get_filename_component(PROJECT_ROOT "${PROJECT_ROOT}" DIRECTORY)
-    get_filename_component(PROJECT_ROOT "${PROJECT_ROOT}" DIRECTORY)
-
-    message(STATUS "[BuildHostTools] Detected _deps in path: ${PROJECT_ROOT}")
-
-    set(LUAJIT_INCLUDE_DIR "${PROJECT_ROOT}/externals/luajit/include")
-    file(REAL_PATH "${LUAJIT_INCLUDE_DIR}" LUAJIT_INCLUDE_DIR)
-
-    message(STATUS "[BuildHostTools] LUAJIT_INCLUDE_DIR: ${LUAJIT_INCLUDE_DIR}")
-else()
-    message(STATUS "[BuildHostTools] Not inside a _deps folder")
-    set(PROJECT_ROOT "${CMAKE_SOURCE_DIR}")
-    set(LUAJIT_INCLUDE_DIR "${PROJECT_ROOT}/externals/luajit/include")
-    file(REAL_PATH "${LUAJIT_INCLUDE_DIR}" LUAJIT_INCLUDE_DIR)
-endif()
-# ======================================================================
-
 ##############################################################################
 ################################## OPTIONS  ##################################
 ##############################################################################
