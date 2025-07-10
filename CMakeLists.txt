@@ -215,8 +215,6 @@ if(LUAJIT_HOST_BUILD_STAGE)
             "${CMAKE_CURRENT_SOURCE_DIR}/src/host/buildvm_fold.c"
         BUILDVM_INCLUDES
             "${CMAKE_CURRENT_SOURCE_DIR}/src"
-        LUAJIT_INCLUDE_DIR
-            "${LUAJIT_INCLUDE_DIR}"
     )
     return()  # finish host build stage
 endif()
@@ -834,8 +832,6 @@ else()
             "${CMAKE_CURRENT_SOURCE_DIR}/src/host/buildvm_fold.c"
         BUILDVM_INCLUDES
             "${CMAKE_CURRENT_SOURCE_DIR}/src"
-        LUAJIT_INCLUDE_DIR
-            "${LUAJIT_INCLUDE_DIR}"
     )
 endif()
 
@@ -895,6 +891,7 @@ if(NOT ${BUILDMODE} STREQUAL "dynamic")
     target_link_libraries(liblua-static ${TARGET_XLIBS})
     target_include_directories(liblua-static INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/src")
     target_include_directories(liblua-static PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+    target_include_directories(liblua-static PRIVATE "${LUAJIT_INCLUDE_DIR}")
     set_target_properties(liblua-static PROPERTIES COMPILE_DEFINITIONS "liblua_static" OUTPUT_NAME "lua-static")
     target_compile_options(liblua-static PRIVATE ${TARGET_XCFLAGS})
 
