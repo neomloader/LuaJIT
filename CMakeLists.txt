@@ -15,7 +15,8 @@ include(cmake/BuildHostTools.cmake)
 ##############################################################################
 ################################## OPTIONS  ##################################
 ##############################################################################
-message(STATUS "[LUAJIT BUILD] LUAJIT_INCLUDE_DIR: ${LUAJIT_INCLUDE_DIR}")
+set(LUAJIT_INCLUDE_DIR "${LUAJIT_INCLUDE_DIR}" CACHE PATH "Path to LuaJIT headers")
+message(STATUS "LUAJIT_INCLUDE_DIR: ${LUAJIT_INCLUDE_DIR}")
 
 option(LUAJIT_OPTION_MORE_WARNINGS "Enable more warnings" OFF)
 
