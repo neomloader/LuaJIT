@@ -4,10 +4,10 @@
 # Some code taken from LuaDist,Torch7 and luavit, contribute by Peter Drahoš, Ronan Collobert.
 # Redistribution and use of this file is allowed according to the terms of the MIT license.
 
-cmake_minimum_required(VERSION 4.0)
-project(LuaJIT C ASM)
+cmake_minimum_required(VERSION 3.10)
+project(LuaJIT CXX C ASM)
 
-include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
 include(CheckLibraryExists)
 
 include(cmake/BuildHostTools.cmake)
@@ -75,15 +75,16 @@ message(STATUS "LuaJIT Version: ${VERSION}")
 #############################  COMPILER OPTIONS  #############################
 ##############################################################################
 
+set(LUAJIT_COMPILE_FLAGS)
 if(LUAJIT_OPTION_MORE_WARNINGS)
-    check_c_compiler_flag("-Wextra -Wdeclaration-after-statement -Wredundant-decls -Wshadow -Wpointer-arith" HAS_MORE_WARNS)
+    check_cxx_compiler_flag("-Wextra -Wdeclaration-after-statement -Wredundant-decls -Wshadow -Wpointer-arith" HAS_MORE_WARNS)
     if(HAS_MORE_WARNS)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wdeclaration-after-statement -Wredundant-decls -Wshadow -Wpointer-arith")
+        list(APPEND LUAJIT_COMPILE_FLAGS "-Wextra" "-Wdeclaration-after-statement" "-Wredundant-decls" "-Wshadow" "-Wpointer-arith")
     endif()
 else()
-    check_c_compiler_flag("-Wall" HAS_W_ALL)
+    check_cxx_compiler_flag("-Wall" HAS_W_ALL)
     if(HAS_W_ALL)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+        list(APPEND LUAJIT_COMPILE_FLAGS "-Wall")
     endif()
 endif()
 
@@ -104,64 +105,63 @@ endif()
 #################################  FEATURES  #################################
 ##############################################################################
 
-set(XCFLAGS)
+set(XCDEFS)
 
 if(LUAJIT_OPTION_DISABLE_FFI)
     message(STATUS "Disable FFI")
-    list(APPEND XCFLAGS "-DLUAJIT_DISABLE_FFI")
+    list(APPEND XCDEFS "-DLUAJIT_DISABLE_FFI")
 endif()
 
 if(LUAJIT_OPTION_ENABLE_LUA52COMPAT)
     message(STATUS "Enable Lua52 compat")
-    list(APPEND XCFLAGS "-DLUAJIT_ENABLE_LUA52COMPAT")
+    list(APPEND XCDEFS "-DLUAJIT_ENABLE_LUA52COMPAT")
 endif()
 
 if(LUAJIT_OPTION_DISABLE_JIT)
     message(STATUS "Disable JIT")
-    list(APPEND XCFLAGS "-DLUAJIT_DISABLE_JIT")
+    list(APPEND XCDEFS "-DLUAJIT_DISABLE_JIT")
 endif()
 
 if(LUAJIT_OPTION_NUMMODE STREQUAL "1")
     message(STATUS "Enable single-number mode")
-    list(APPEND XCFLAGS "-DLUAJIT_NUMMODE=1")
+    list(APPEND XCDEFS "-DLUAJIT_NUMMODE=1")
 elseif(LUAJIT_OPTION_NUMMODE STREQUAL "2")
     message(STATUS "Enable dual-number mode")
-    list(APPEND XCFLAGS "-DLUAJIT_NUMMODE=2")
+    list(APPEND XCDEFS "-DLUAJIT_NUMMODE=2")
 endif()
 
 if(LUAJIT_OPTION_DISABLE_GC64)
     message(STATUS "Disable GC64")
-    list(APPEND XCFLAGS "-DLUAJIT_DISABLE_GC64")
+    list(APPEND XCDEFS "-DLUAJIT_DISABLE_GC64")
 endif()
 
 ##### DEBUGGING SUPPORT
 
 if(LUAJIT_OPTION_USE_SYSMALLOC)
     message(STATUS "Enable system malloc")
-    list(APPEND XCFLAGS "-DLUAJIT_USE_SYSMALLOC")
+    list(APPEND XCDEFS "-DLUAJIT_USE_SYSMALLOC")
 endif()
 
 if(LUAJIT_OPTION_USE_VALGRIND)
     message(STATUS "Enable valgrind support")
-    list(APPEND XCFLAGS "-DLUAJIT_USE_VALGRIND")
+    list(APPEND XCDEFS "-DLUAJIT_USE_VALGRIND")
 endif()
 
 if(LUAJIT_OPTION_USE_GDBJIT)
     message(STATUS "Use GDBJIT")
-    list(APPEND XCFLAGS "-DLUAJIT_USE_GDBJIT")
+    list(APPEND XCDEFS "-DLUAJIT_USE_GDBJIT")
 endif()
 
 if(LUAJIT_OPTION_USE_APICHECK)
     message(STATUS "Use API Check")
-    list(APPEND XCFLAGS "-DLUA_USE_APICHECK")
+    list(APPEND XCDEFS "-DLUA_USE_APICHECK")
 endif()
 
 if(LUAJIT_OPTION_USE_ASSERT)
     message(STATUS "Turn on all assert")
-    list(APPEND XCFLAGS "-DLUA_USE_ASSERT")
+    list(APPEND XCDEFS "-DLUA_USE_ASSERT")
 endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${XCFLAGS}")
 
 ##############################################################################
 # Host build stage (Cross-compiling)
@@ -245,11 +245,11 @@ endif()
 # Flags and options for target.
 ##############################################################################
 
-set(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES}" "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS} ${XCFLAGS}")
+set(CMAKE_REQUIRED_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(CMAKE_REQUIRED_DEFINITIONS ${XCDEFS})
 
 macro(test_target_arch_defined TEST_VAR)
-    check_c_source_compiles("
+    check_cxx_source_compiles("
 #undef ${TEST_VAR}
 #include \"lj_arch.h\"
 #if ${TEST_VAR}
@@ -261,7 +261,7 @@ int main() { return 0; }
 endmacro()
 
 macro(test_target_arch_equals TEST_VAR EXPECT_VALUE)
-    check_c_source_compiles("
+    check_cxx_source_compiles("
 #undef ${TEST_VAR}
 #include \"lj_arch.h\"
 #if ${TEST_VAR} == ${EXPECT_VALUE}
@@ -350,30 +350,30 @@ if(LJ_TARGET_PS3_1)
     set(TARGET_SYS "PS3")
     list(APPEND TARGET_ARCH "-D__CELLOS_LV2__")
     set(TARGET_ARCH_CELLOS_LV2 1)
-    list(APPEND TARGET_XCFLAGS "-DLUAJIT_USE_SYSMALLOC")
+    list(APPEND XCDEFS "-DLUAJIT_USE_SYSMALLOC")
 
     find_package(Threads REQUIRED)
     list(APPEND TARGET_XLIBS "Threads::Threads")
 endif()
 
 if(TARGET_LJARCH STREQUAL "x86")
-    check_c_compiler_flag("-msse" HAS_SSE)
+    check_cxx_compiler_flag("-msse" HAS_SSE)
     if(HAS_SSE)
         list(APPEND TARGET_XCFLAGS "-msse")
     endif()
 
-    check_c_compiler_flag("-msse2" HAS_SSE2)
+    check_cxx_compiler_flag("-msse2" HAS_SSE2)
     if(HAS_SSE2)
         list(APPEND TARGET_XCFLAGS "-msse2")
     endif()
 
-    check_c_compiler_flag("-mfpmath=sse" HAS_FPMATH_SSE)
+    check_cxx_compiler_flag("-mfpmath=sse" HAS_FPMATH_SSE)
     if(HAS_FPMATH_SSE)
         list(APPEND TARGET_XCFLAGS "-mfpmath=sse")
     endif()
 endif()
 if(TARGET_LJARCH STREQUAL "x64")  # for lj_str_hash
-    check_c_compiler_flag("-msse4.2" HAS_SSE_42)
+    check_cxx_compiler_flag("-msse4.2" HAS_SSE_42)
     if(HAS_SSE_42)
         list(APPEND TARGET_XCFLAGS "-msse4.2")
     endif()
@@ -454,7 +454,7 @@ if(TARGET_SYS STREQUAL "Windows")
 #    list(APPEND TARGET_STRIP "--strip-unneeded")
 #    list(APPEND TARGET_XSHLDFLAGS "-shared -Wl,--out-implib libluajit-${ABIVER}.dll.a")
 else()
-    check_c_compiler_flag("-fno-stack-protector" HAS_NO_STACK_PROTECTOR)
+    check_cxx_compiler_flag("-fno-stack-protector" HAS_NO_STACK_PROTECTOR)
     if(HAS_NO_STACK_PROTECTOR)
         list(APPEND TARGET_XCFLAGS "-fno-stack-protector")
     endif()
@@ -467,7 +467,7 @@ else()
 #            list(APPEND TARGET_STRIP "-x")
 #            list(APPEND TARGET_XSHLDFLAGS "-dynamiclib -single_module -undefined dynamic_lookup -fPIC")
             if(TARGET_LJARCH "arm64")
-                check_c_compiler_flag("-fno-omit-frame-pointer" HAS_NO_OMIT_FRAME_POINTER)
+                check_cxx_compiler_flag("-fno-omit-frame-pointer" HAS_NO_OMIT_FRAME_POINTER)
                 if(HAS_NO_OMIT_FRAME_POINTER)
                     list(APPEND TARGET_XCFLAGS "-fno-omit-frame-pointer")
                 endif()
@@ -476,7 +476,7 @@ else()
             test_target_arch_equals(LJ_NO_UNWIND 1)
             if(NOT LJ_NO_UNWIND_1)
                 execute_process(COMMAND bash "-c"
-                    "exec 2>/dev/null; echo 'extern void b(void);int a(void){b();return 0;}' | ${CMAKE_C_COMPILER} -c -x c - -o '${CMAKE_CURRENT_BINARY_DIR}/tmpunwind.o' && { grep -qa -e eh_frame -e __unwind_info '${CMAKE_CURRENT_BINARY_DIR}/tmpunwind.o' || grep -qU -e eh_frame -e __unwind_info '${CMAKE_CURRENT_BINARY_DIR}/tmpunwind.o'; } && echo E"
+                    "exec 2>/dev/null; echo 'extern void b(void);int a(void){b();return 0;}' | ${CMAKE_CXX_COMPILER} -c -x c++ - -o '${CMAKE_CURRENT_BINARY_DIR}/tmpunwind.o' && { grep -qa -e eh_frame -e __unwind_info '${CMAKE_CURRENT_BINARY_DIR}/tmpunwind.o' || grep -qU -e eh_frame -e __unwind_info '${CMAKE_CURRENT_BINARY_DIR}/tmpunwind.o'; } && echo E"
                     OUTPUT_VARIABLE TARGET_TESTUNWIND)
                 if(${TARGET_TESTUNWIND} MATCHES "E")
                     list(APPEND TARGET_XCFLAGS "-DLUAJIT_UNWIND_EXTERNAL")
@@ -717,7 +717,11 @@ set(LJCORE_C
     ${LJLIB_C}
     "${CMAKE_CURRENT_SOURCE_DIR}/src/lib_init.c"
 )
-set(LJVMCORE_C "${CMAKE_CURRENT_BINARY_DIR}/${LJVM_BOUT}" "${LJCORE_C}")
+set(LJVM_C_SOURCES ${LJCORE_C})
+set(LJVM_ASM_OBJ "${CMAKE_CURRENT_BINARY_DIR}/${LJVM_BOUT}")
+
+# Set all C sources to be compiled by the C++ compiler
+set_source_files_properties(${LJVM_C_SOURCES} PROPERTIES LANGUAGE CXX)
 
 ##############################################################################
 # Build mode handling.
@@ -875,7 +879,7 @@ function(add_buildvm_target)
     set_source_files_properties("${BUILDVM_TARGET_OUTPUT}" PROPERTIES GENERATED TRUE)
 endfunction()
 
-add_buildvm_target(MODE "${LJVM_MODE}" OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${LJVM_BOUT}")
+add_buildvm_target(MODE "${LJVM_MODE}" OUTPUT "${LJVM_ASM_OBJ}")
 add_buildvm_target(MODE "bcdef" OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/lj_bcdef.h" SOURCES ${LJLIB_C})
 add_buildvm_target(MODE "ffdef" OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/lj_ffdef.h" SOURCES ${LJLIB_C})
 add_buildvm_target(MODE "libdef" OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/lj_libdef.h" SOURCES ${LJLIB_C})
@@ -884,7 +888,7 @@ add_buildvm_target(MODE "vmdef" OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/vmdef.lua" S
 add_buildvm_target(MODE "folddef" OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/lj_folddef.h" SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/lj_opt_fold.c")
 
 set(BUILDVM_OUTPUTS
-    "${CMAKE_CURRENT_BINARY_DIR}/${LJVM_BOUT}"
+    "${LJVM_ASM_OBJ}"
     "${CMAKE_CURRENT_BINARY_DIR}/lj_bcdef.h"
     "${CMAKE_CURRENT_BINARY_DIR}/lj_ffdef.h"
     "${CMAKE_CURRENT_BINARY_DIR}/lj_libdef.h"
@@ -893,31 +897,38 @@ set(BUILDVM_OUTPUTS
     "${CMAKE_CURRENT_BINARY_DIR}/lj_folddef.h")
 
 if(NOT ${BUILDMODE} STREQUAL "static")
-    add_library(liblua-shared SHARED ${LJVMCORE_C} ${BUILDVM_OUTPUTS})
-    target_link_libraries(liblua-shared ${TARGET_XLIBS})
+    add_library(liblua-shared SHARED ${LJVM_C_SOURCES} ${LJVM_ASM_OBJ} ${BUILDVM_OUTPUTS})
+    target_link_libraries(liblua-shared PRIVATE ${TARGET_XLIBS})
     target_include_directories(liblua-shared INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/src")
     target_include_directories(liblua-shared PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+    target_compile_options(liblua-shared PRIVATE ${LUAJIT_COMPILE_FLAGS} ${TARGET_XCFLAGS})
+    target_compile_definitions(liblua-shared PRIVATE ${XCDEFS} ${TARGET_ARCH})
     set_target_properties(liblua-shared PROPERTIES PREFIX "lib" IMPORT_PREFIX "lib" OUTPUT_NAME "lua")
-    if(TARGET_SYS STREQUAL "Windows" AND NOT CYGWIN)  # FIXME: CYGWIN detect?
-        target_compile_options(liblua-shared PRIVATE "-DLUA_BUILD_AS_DLL" ${TARGET_XCFLAGS})
-    else()
-        target_compile_options(liblua-shared PRIVATE ${TARGET_XCFLAGS})
+    if(TARGET_SYS STREQUAL "Windows" AND NOT CYGWIN)
+        target_compile_definitions(liblua-shared PRIVATE "LUA_BUILD_AS_DLL")
     endif()
 
-    add_executable(lua "${CMAKE_CURRENT_SOURCE_DIR}/src/luajit.c")
-    target_link_libraries(lua liblua-shared)
+    set(LUAJIT_MAIN_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/luajit.c")
+    set_source_files_properties(${LUAJIT_MAIN_SRC} PROPERTIES LANGUAGE CXX)
+    add_executable(lua ${LUAJIT_MAIN_SRC})
+    target_link_libraries(lua PRIVATE liblua-shared)
+    target_compile_definitions(lua PRIVATE ${XCDEFS})
 endif()
 
 if(NOT ${BUILDMODE} STREQUAL "dynamic")
-    add_library(liblua-static STATIC ${LJVMCORE_C} ${BUILDVM_OUTPUTS})
-    target_link_libraries(liblua-static ${TARGET_XLIBS})
+    add_library(liblua-static STATIC ${LJVM_C_SOURCES} ${LJVM_ASM_OBJ} ${BUILDVM_OUTPUTS})
+    target_link_libraries(liblua-static PRIVATE ${TARGET_XLIBS})
     target_include_directories(liblua-static INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/src")
     target_include_directories(liblua-static PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
     target_include_directories(liblua-static PRIVATE "${LUAJIT_INCLUDE_DIR}")
+    target_compile_options(liblua-static PRIVATE ${LUAJIT_COMPILE_FLAGS} ${TARGET_XCFLAGS})
+    target_compile_definitions(liblua-static PRIVATE ${XCDEFS} ${TARGET_ARCH})
     set_target_properties(liblua-static PROPERTIES COMPILE_DEFINITIONS "liblua_static" OUTPUT_NAME "lua-static")
-    target_compile_options(liblua-static PRIVATE ${TARGET_XCFLAGS})
 
-    add_executable(lua-static "${CMAKE_CURRENT_SOURCE_DIR}/src/luajit.c")
+    set(LUAJIT_MAIN_SRC_STATIC "${CMAKE_CURRENT_SOURCE_DIR}/src/luajit.c")
+    set_source_files_properties(${LUAJIT_MAIN_SRC_STATIC} PROPERTIES LANGUAGE CXX)
+    add_executable(lua-static ${LUAJIT_MAIN_SRC_STATIC})
     target_include_directories(lua-static PRIVATE "${LUAJIT_INCLUDE_DIR}")
-    target_link_libraries(lua-static liblua-static)
+    target_link_libraries(lua-static PRIVATE liblua-static)
+    target_compile_definitions(lua-static PRIVATE ${XCDEFS})
 endif()
