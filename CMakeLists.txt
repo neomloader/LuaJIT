@@ -746,7 +746,7 @@ if(CMAKE_CROSSCOMPILING)
         execute_process(COMMAND "${CMAKE_COMMAND}"
             "-E" "env" "CC=" "CXX=" "ASM=" "SYSROOT="  # using host default compiler, FIXME: customize?
             "${CMAKE_COMMAND}"
-            "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
+            "-DCMAKE_BUILD_TYPE=Debug"
             "-DLUAJIT_OPTION_DISABLE_FFI=${LUAJIT_OPTION_DISABLE_FFI}"
             "-DLUAJIT_OPTION_ENABLE_LUA52COMPAT=${LUAJIT_OPTION_ENABLE_LUA52COMPAT}"
             "-DLUAJIT_OPTION_DISABLE_JIT=${LUAJIT_OPTION_DISABLE_JIT}"
