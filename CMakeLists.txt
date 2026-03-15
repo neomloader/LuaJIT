@@ -742,10 +742,15 @@ if(CMAKE_CROSSCOMPILING)
         set(LUAJIT_HOST_BUILD_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/HostBuild/")
         execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${LUAJIT_HOST_BUILD_WORKDIR}")
 
+        set(HOST_GENERATOR "Ninja")
+        set(HOST_C_COMPILER "gcc")
+        set(HOST_CXX_COMPILER "g++")
+        
         # run host cmake
         execute_process(COMMAND "${CMAKE_COMMAND}"
-            "-E" "env" "CC=" "CXX=" "ASM=" "SYSROOT="  # using host default compiler, FIXME: customize?
-            "${CMAKE_COMMAND}"
+            "-G" "${HOST_GENERATOR}"
+            "-DCMAKE_C_COMPILER=${HOST_C_COMPILER}"
+            "-DCMAKE_CXX_COMPILER=${HOST_CXX_COMPILER}"
             "-DCMAKE_BUILD_TYPE=Debug"
             "-DLUAJIT_OPTION_DISABLE_FFI=${LUAJIT_OPTION_DISABLE_FFI}"
             "-DLUAJIT_OPTION_ENABLE_LUA52COMPAT=${LUAJIT_OPTION_ENABLE_LUA52COMPAT}"
