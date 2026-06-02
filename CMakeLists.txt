@@ -627,6 +627,9 @@ endforeach()
 
 set(DASM_VER "${LJ_ARCH_VERSION}")
 
+set(DASM_NOUNWIND 1)
+set(TARGET_ARCH_NO_UNWIND 1)
+list(APPEND TARGET_ARCH "-DLUAJIT_NO_UNWIND")
 # buildvm output
 
 set(LJVM_MODE "elfasm")
